@@ -1,0 +1,27 @@
+services:
+  adminer:
+    image: adminer:4
+    environment:
+      ADMINER_DESIGN: pepa-linha
+      ADMINER_DEFAULT_SERVER: database
+    ports:
+      - '8080:8080'
+
+  database:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: 'workeverywhere'
+      MYSQL_ROOT_PASSWORD: 'HaloPassword138'
+      MYSQL_USER: 'dev'
+      MYSQL_PASSWORD: 'PastiPassword138'
+    ports:
+      - '3306:3306'
+    volumes:
+      - dev-db:/var/lib/postgresql/data
+
+volumes:
+  dev-db:
+
+networks:
+  default:
+    name: workeverywhere
