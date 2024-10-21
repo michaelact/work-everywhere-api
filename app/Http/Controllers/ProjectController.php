@@ -85,4 +85,50 @@ class ProjectController
 
         return response()->json(['message' => 'Project deleted successfully']);
     }
+
+    /**
+     * Assign additional users to the project
+     */
+    public function assignUsers(Request $request, $projectId)
+    {
+        $project = Project::whereHas('users', function ($query) use ($request) {
+            $query->where('user_id', $request->user()->id);
+        })->findOrFail($projectId);
+
+        // Validate that the input is an array of user IDs
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id', // Ensure each user ID exists
+        ]);
+
+        // Attach additional users to the project (avoiding duplicates)
+        $project->users()->syncWithoutDetaching($validated['user_ids']);
+
+        return response()->json([
+            'message' => 'Users successfully assigned to the project',
+            'project' => $project->load('users'), // Load assigned users to return in response
+        ]);
+    }
+
+    /**
+     * Remove a user from the project
+     */
+    public function removeUser(Request $request, $projectId, $userId)
+    {
+        $project = Project::whereHas('users', function ($query) use ($request) {
+            $query->where('user_id', $request->user()->id);
+        })->findOrFail($projectId);
+
+        // Ensure the user exists and is currently assigned to the project
+        if ($project->users()->where('id', $userId)->doesntExist()) {
+            return response()->json(['message' => 'User not assigned to this project'], 404);
+        }
+
+        // Detach the user from the project
+        $project->users()->detach($userId);
+
+        return response()->json([
+            'message' => 'User successfully removed from the project',
+        ]);
+    }
 }

@@ -47,7 +47,7 @@ class User extends Authenticatable
         ];
     }
 
-    // A user can be assigned to multiple projects
+    // A user can be assigned to many projects
     public function projects()
     {
         return $this->belongsToMany(Project::class, 'project_user');
