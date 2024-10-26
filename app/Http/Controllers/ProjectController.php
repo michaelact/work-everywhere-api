@@ -11,7 +11,7 @@ class ProjectController
     public function index(Request $request)
     {
         $user = $request->user();
-        $projects = $user->projects()->with('tasks')->get(); // Include tasks for each project
+        $projects = $user->projects()->with('tasks')->get();
 
         return response()->json($projects);
     }
@@ -32,7 +32,6 @@ class ProjectController
             'created_by' => $request->user()->id,
         ]);
 
-        // Attach the creator as a user assigned to the project
         $project->users()->attach($request->user()->id);
 
         return response()->json($project, 201);
@@ -55,7 +54,6 @@ class ProjectController
     {
         $user = $request->user();
 
-        // Ensure the user is assigned to the project
         $project = Project::whereHas('users', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($id);
@@ -76,7 +74,6 @@ class ProjectController
     {
         $user = $request->user();
 
-        // Ensure the user is assigned to the project
         $project = Project::whereHas('users', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($id);
@@ -84,6 +81,27 @@ class ProjectController
         $project->delete();
 
         return response()->json(['message' => 'Project deleted successfully']);
+    }
+
+    /**
+     * Get summary of projects
+     */
+    public function getProgress($id)
+    {
+        $project = Project::findOrFail($id);
+        $tasks = $project->tasks;
+        
+        $progressData = $tasks->groupBy(function ($task) {
+            return $task->created_at->format('Y-m-d');
+        })->map(function ($dayTasks) {
+            return [
+                'date' => $dayTasks->first()->created_at->format('Y-m-d'),
+                'completedTasks' => $dayTasks->where('status', 'completed')->count(),
+                'totalTasks' => $dayTasks->count(),
+            ];
+        })->values();
+
+        return response()->json($progressData);
     }
 
     /**
@@ -95,18 +113,16 @@ class ProjectController
             $query->where('user_id', $request->user()->id);
         })->findOrFail($projectId);
 
-        // Validate that the input is an array of user IDs
         $validated = $request->validate([
             'user_ids' => 'required|array',
-            'user_ids.*' => 'exists:users,id', // Ensure each user ID exists
+            'user_ids.*' => 'exists:users,id',
         ]);
 
-        // Attach additional users to the project (avoiding duplicates)
         $project->users()->syncWithoutDetaching($validated['user_ids']);
 
         return response()->json([
             'message' => 'Users successfully assigned to the project',
-            'project' => $project->load('users'), // Load assigned users to return in response
+            'project' => $project->load('users'),
         ]);
     }
 
@@ -119,12 +135,10 @@ class ProjectController
             $query->where('user_id', $request->user()->id);
         })->findOrFail($projectId);
 
-        // Ensure the user exists and is currently assigned to the project
         if ($project->users()->where('id', $userId)->doesntExist()) {
             return response()->json(['message' => 'User not assigned to this project'], 404);
         }
 
-        // Detach the user from the project
         $project->users()->detach($userId);
 
         return response()->json([
