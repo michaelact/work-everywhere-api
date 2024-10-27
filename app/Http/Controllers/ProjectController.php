@@ -97,7 +97,7 @@ class ProjectController
         $completedTasks = $tasks->where('status', 'completed')->count();
         $incompleteTasks = $tasks->where('status', '!=', 'completed')->count();
         $overdueTasks = $tasks->where('status', '!=', 'completed')
-                              ->where('deadline', '<', Carbon::now())
+                              ->where('due_date', '<', Carbon::now())
                               ->count();
 
         // Daily completed task breakdown
