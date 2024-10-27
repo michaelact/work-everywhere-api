@@ -5,7 +5,7 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-FROM php:8.2-fpm-bullseye
+FROM php:8.2-fpm-bullseye AS runner
 
 RUN apt-get update && apt-get install -y \
     nginx \

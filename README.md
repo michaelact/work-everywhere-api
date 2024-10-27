@@ -32,7 +32,7 @@ The **Working Everywhere API** is a Laravel-based application designed to facili
    - The `application` service runs the Laravel application, exposing the API on port 8000.
 
 3. **Access the Application**
-   Once the containers are up, access the API by navigating to `http://localhost` in a web browser or by using a tool like `curl` or Postman.
+   Once the containers are up, access the API by navigating to http://localhost:8000 in a web browser or by using a tool like `curl` or Postman.
 
 ## Details
 
@@ -74,5 +74,3 @@ erDiagram
     USER ||--o{ PROJECT : "can be assigned to"
     PROJECT ||--o{ TASK : "contains"
 ```
-
-This schema represents the core relationships in the application, allowing users to create and manage projects and tasks.
