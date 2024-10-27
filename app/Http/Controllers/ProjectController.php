@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Project;
 use Illuminate\Http\Request;
 
@@ -90,18 +91,36 @@ class ProjectController
     {
         $project = Project::findOrFail($id);
         $tasks = $project->tasks;
-        
-        $progressData = $tasks->groupBy(function ($task) {
-            return $task->created_at->format('Y-m-d');
-        })->map(function ($dayTasks) {
-            return [
-                'date' => $dayTasks->first()->created_at->format('Y-m-d'),
-                'completedTasks' => $dayTasks->where('status', 'completed')->count(),
-                'totalTasks' => $dayTasks->count(),
-            ];
-        })->values();
 
-        return response()->json($progressData);
+        // Summary data
+        $totalTasks = $tasks->count();
+        $completedTasks = $tasks->where('status', 'completed')->count();
+        $incompleteTasks = $tasks->where('status', '!=', 'completed')->count();
+        $overdueTasks = $tasks->where('status', '!=', 'completed')
+                              ->where('deadline', '<', Carbon::now())
+                              ->count();
+
+        // Daily completed task breakdown
+        $dailyCompletedTasks = $tasks->where('status', 'completed')
+            ->groupBy(function ($task) {
+                return $task->updated_at->format('Y-m-d');
+            })
+            ->map(function ($dayTasks) {
+                return [
+                    'date' => $dayTasks->first()->updated_at->format('Y-m-d'),
+                    'completed_count' => $dayTasks->count(),
+                ];
+            })->values();
+
+        return response()->json([
+            'summary' => [
+                'total_tasks' => $totalTasks,
+                'completed_tasks' => $completedTasks,
+                'incomplete_tasks' => $incompleteTasks,
+                'overdue_tasks' => $overdueTasks,
+            ],
+            'daily_completed_tasks' => $dailyCompletedTasks,
+        ]);
     }
 
     /**
