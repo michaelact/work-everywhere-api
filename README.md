@@ -20,13 +20,13 @@ The **Working Everywhere API** is a Laravel-based application designed to facili
    Download or clone the codebase from the repository:
    ```bash
    git clone https://github.com/michaelact/work-everywhere-api
-   cd working-everywhere-api
+   cd work-everywhere-api
    ```
 
 2. **Build and Start the Containers**
    Use Docker Compose to build and start the services:
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
    - The `database` service runs MySQL 8 with the necessary environment variables for database creation.
    - The `application` service runs the Laravel application, exposing the API on port 8000.

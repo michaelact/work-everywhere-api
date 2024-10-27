@@ -18,6 +18,6 @@ class AdminPermissionSeeder extends Seeder
         User::firstOrCreate(['email' => 'admin@example.com'], ['name' => 'Admin', 'password' => bcrypt('ApalagiSaya150')])->assignRole('admin');
 
         Role::firstOrCreate(['name' => 'member']);
-        User::firstOrCreate(['email' => 'michael.4ct@gmail.com'], ['name' => 'Michael Act', 'password' => bcrypt('SangatTerlindungi150')])->assignRole('member');
+        User::firstOrCreate(['email' => 'user@example.com'], ['name' => 'User', 'password' => bcrypt('SangatTerlindungi150')])->assignRole('member');
     }
 }
