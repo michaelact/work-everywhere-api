@@ -15,9 +15,9 @@ class AdminPermissionSeeder extends Seeder
     public function run(): void
     {
         Role::firstOrCreate(['name' => 'admin']);
-        User::firstOrCreate(['email' => 'admin@admin.com'], ['name' => 'Admin', 'password' => bcrypt('secretadmin')])->assignRole('admin');
+        User::firstOrCreate(['email' => 'admin@example.com'], ['name' => 'Admin', 'password' => bcrypt('ApalagiSaya150')])->assignRole('admin');
 
-        Role::firstOrCreate(['name' => 'user']);
-        User::firstOrCreate(['email' => 'user@example.com'], ['name' => 'User', 'password' => bcrypt('secretuser')])->assignRole('user');
+        Role::firstOrCreate(['name' => 'member']);
+        User::firstOrCreate(['email' => 'michael.4ct@gmail.com'], ['name' => 'Michael Act', 'password' => bcrypt('SangatTerlindungi150')])->assignRole('member');
     }
 }

@@ -13,7 +13,7 @@ class ProjectTaskSeeder extends Seeder
             ->hasTasks(10)
             ->create()
             ->each(function ($project) {
-                $project->users()->attach(1);
+                $project->users()->attach(2);
             });
     }
 }
