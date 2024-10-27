@@ -17,7 +17,7 @@ services:
     ports:
       - '3306:3306'
     volumes:
-      - dev-db:/var/lib/postgresql/data
+      - dev-db:/var/lib/mysql
 
 volumes:
   dev-db:
