@@ -10,7 +10,13 @@ class Task extends Model
 
     protected $fillable = ['project_id', 'title', 'description', 'status', 'due_date', 'priority'];
 
-    // Each task belongs to a project
+    protected function casts(): array
+    {
+        return [
+            'due_date' => 'datetime',
+        ];
+    }
+
     public function project()
     {
         return $this->belongsTo(Project::class);
