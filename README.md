@@ -1,5 +1,8 @@
 # Working Everywhere API
 
+> [!CAUTION]
+> Work Everywhere is not production-ready, only for a college assignment.
+
 ## Overview
 
 The **Working Everywhere API** is a Laravel-based application designed to facilitate project and task management. It features a MySQL database for data storage and handles project assignments, task tracking, and user management.
