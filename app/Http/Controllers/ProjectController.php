@@ -12,7 +12,7 @@ class ProjectController
     public function index(Request $request)
     {
         $user = $request->user();
-        $projects = $user->projects()->with('tasks')->get();
+        $projects = $user->projects()->with('members')->get();
 
         return response()->json($projects);
     }
@@ -23,17 +23,16 @@ class ProjectController
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'due_date' => 'nullable|date',
+            'due_date' => 'required|date',
+            'member_ids' => 'array',
+            'member_ids.*' => 'exists:users,id',
         ]);
 
-        $project = Project::create([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'due_date' => $validated['due_date'],
-            'created_by' => $request->user()->id,
-        ]);
+        $project = Project::create($validated);
 
-        $project->users()->attach($request->user()->id);
+        if (isset($validated['member_ids'])) {
+            $project->members()->attach($validated['member_ids']);
+        }
 
         return response()->json($project, 201);
     }
@@ -43,9 +42,9 @@ class ProjectController
     {
         $user = $request->user();
 
-        $project = Project::whereHas('users', function ($query) use ($user) {
+        $project = Project::whereHas('members', function ($query) use ($user) {
             $query->where('user_id', $user->id);
-        })->with('tasks')->findOrFail($id);
+        })->with(['tasks', 'members'])->findOrFail($id);
 
         return response()->json($project);
     }
@@ -55,17 +54,21 @@ class ProjectController
     {
         $user = $request->user();
 
-        $project = Project::whereHas('users', function ($query) use ($user) {
+        $project = Project::whereHas('members', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($id);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'due_date' => 'nullable|date',
+            'due_date' => 'required|date',
+            'member_ids' => 'array',
+            'member_ids.*' => 'exists:users,id',
         ]);
 
-        $project->update($validated);
+        if (isset($validated['member_ids'])) {
+            $project->members()->sync($validated['member_ids']);
+        }
 
         return response()->json($project);
     }
@@ -75,7 +78,7 @@ class ProjectController
     {
         $user = $request->user();
 
-        $project = Project::whereHas('users', function ($query) use ($user) {
+        $project = Project::whereHas('members', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($id);
 
@@ -126,42 +129,43 @@ class ProjectController
     /**
      * Assign additional users to the project
      */
-    public function assignUsers(Request $request, $projectId)
+    public function addMember(Request $request, $projectId)
     {
-        $project = Project::whereHas('users', function ($query) use ($request) {
+        $project = Project::whereHas('members', function ($query) use ($request) {
             $query->where('user_id', $request->user()->id);
         })->findOrFail($projectId);
 
         $validated = $request->validate([
-            'user_ids' => 'required|array',
-            'user_ids.*' => 'exists:users,id',
+            'user_id' => 'required|exists:users,id',
         ]);
 
-        $project->users()->syncWithoutDetaching($validated['user_ids']);
-
-        return response()->json([
-            'message' => 'Users successfully assigned to the project',
-            'project' => $project->load('users'),
-        ]);
+        $project->members()->attach($validated['user_id']);
+        return response()->json($project->load('members'));
     }
 
     /**
      * Remove a user from the project
      */
-    public function removeUser(Request $request, $projectId, $userId)
+    public function removeMember(Request $request, $projectId)
     {
-        $project = Project::whereHas('users', function ($query) use ($request) {
+        $project = Project::whereHas('members', function ($query) use ($request) {
             $query->where('user_id', $request->user()->id);
         })->findOrFail($projectId);
 
-        if ($project->users()->where('id', $userId)->doesntExist()) {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        if ($project->members()->where('user_id', $validated['user_id'])->doesntExist()) {
             return response()->json(['message' => 'User not assigned to this project'], 404);
         }
 
-        $project->users()->detach($userId);
+        $memberCount = $project->members()->count();
+        if ($memberCount <= 1) {
+            return response()->json(['message' => 'You cannot remove the last member of the project'], 400);
+        }
 
-        return response()->json([
-            'message' => 'User successfully removed from the project',
-        ]);
+        $project->members()->detach($validated['user_id']);
+        return response()->json($project->load('members'));
     }
 }

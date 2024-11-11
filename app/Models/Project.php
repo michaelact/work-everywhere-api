@@ -11,13 +11,13 @@ class Project extends Model
 
     protected $fillable = ['name', 'description', 'due_date', 'created_by'];
 
-    public function users()
-    {
-        return $this->belongsToMany(User::class, 'project_user');
-    }
-
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'project_user')->withTimestamps();
     }
 }

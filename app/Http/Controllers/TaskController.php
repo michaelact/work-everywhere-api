@@ -13,7 +13,7 @@ class TaskController
     {
         $user = $request->user();
 
-        $project = Project::whereHas('users', function ($query) use ($user) {
+        $project = Project::whereHas('members', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($projectId);
 
@@ -27,19 +27,25 @@ class TaskController
     {
         $user = $request->user();
 
-        $project = Project::whereHas('users', function ($query) use ($user) {
+        $project = Project::whereHas('members', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($projectId);
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'required|string',
-            'priority' => 'required|integer',
+            'status' => 'required|in:todo,in_progress,completed',
+            'assigned_user_id' => 'nullable|exists:users,id',
             'due_date' => 'nullable|date',
+            'project_id' => 'required|exists:projects,id',
         ]);
 
         $task = $project->tasks()->create($validated);
+
+        // if ($task->assigned_user_id) {
+        //     $user = User::find($task->assigned_user_id);
+        //     $user->notify(new TaskAssigned($task));
+        // }
 
         return response()->json($task, 201);
     }
@@ -49,7 +55,7 @@ class TaskController
     {
         $user = $request->user();
 
-        $task = Task::whereHas('project.users', function ($query) use ($user) {
+        $task = Task::whereHas('project.members', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($id);
 
@@ -57,11 +63,25 @@ class TaskController
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'required|string',
+            'assigned_user_id' => 'nullable|exists:users,id',
             'priority' => 'required|integer',
             'due_date' => 'nullable|date',
         ]);
 
+        $oldAssignedUserId = $task->assigned_user_id;
         $task->update($validated);
+
+        // if ($task->assigned_user_id && $task->assigned_user_id !== $oldAssignedUserId) {
+        //     $user = User::find($task->assigned_user_id);
+        //     $user->notify(new TaskAssigned($task));
+        // }
+
+        // if ($task->wasChanged('due_date') || $task->wasChanged('status')) {
+        //     if ($task->assigned_user_id) {
+        //         $user = User::find($task->assigned_user_id);
+        //         $user->notify(new TaskUpdated($task));
+        //     }
+        // }
 
         return response()->json($task);
     }
@@ -71,7 +91,7 @@ class TaskController
     {
         $user = $request->user();
 
-        $task = Task::whereHas('project.users', function ($query) use ($user) {
+        $task = Task::whereHas('project.members', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->findOrFail($id);
 
