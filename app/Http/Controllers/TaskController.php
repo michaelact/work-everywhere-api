@@ -47,7 +47,7 @@ class TaskController
 
         if ($task->assigned_user_id) {
             $user = User::find($task->assigned_user_id);
-            $user->notify(new TaskAssigned($task));
+            $user->notify(new TaskAssigned($task, $projectId));
         }
 
         return response()->json($task, 201);
@@ -76,13 +76,13 @@ class TaskController
 
         if ($task->assigned_user_id && $task->assigned_user_id !== $oldAssignedUserId) {
             $user = User::find($task->assigned_user_id);
-            $user->notify(new TaskAssigned($task));
+            $user->notify(new TaskAssigned($task, $task->project_id));
         }
 
         if ($task->wasChanged('due_date') || $task->wasChanged('status')) {
             if ($task->assigned_user_id) {
                 $user = User::find($task->assigned_user_id);
-                $user->notify(new TaskUpdated($task));
+                $user->notify(new TaskUpdated($task, $task->project_id));
             }
         }
 
