@@ -23,17 +23,17 @@ class ProjectController
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'due_date' => 'required|date',
-            'member_ids' => 'array',
-            'member_ids.*' => 'exists:users,id',
+            'due_date' => 'required|date'
         ]);
 
-        $project = Project::create($validated);
+        $project = Project::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'due_date' => $validated['due_date'],
+            'created_by' => $request->user()->id,
+        ]);
 
-        if (isset($validated['member_ids'])) {
-            $project->members()->attach($validated['member_ids']);
-        }
-
+        $project->members()->attach($request->user()->id);
         return response()->json($project, 201);
     }
 

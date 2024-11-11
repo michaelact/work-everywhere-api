@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\User;
 use App\Models\Project;
+use App\Notifications\TaskAssigned;
+use App\Notifications\TaskUpdated;
 use Illuminate\Http\Request;
 
 class TaskController
@@ -24,7 +27,7 @@ class TaskController
 
     // Create a new task for a project (only if the user is assigned to the project)
     public function store(Request $request, $projectId)
-    {
+    {   
         $user = $request->user();
 
         $project = Project::whereHas('members', function ($query) use ($user) {
@@ -37,15 +40,15 @@ class TaskController
             'status' => 'required|in:todo,in_progress,completed',
             'assigned_user_id' => 'nullable|exists:users,id',
             'due_date' => 'nullable|date',
-            'project_id' => 'required|exists:projects,id',
+            'priority' => 'required|integer|in:1,2,3',
         ]);
 
         $task = $project->tasks()->create($validated);
 
-        // if ($task->assigned_user_id) {
-        //     $user = User::find($task->assigned_user_id);
-        //     $user->notify(new TaskAssigned($task));
-        // }
+        if ($task->assigned_user_id) {
+            $user = User::find($task->assigned_user_id);
+            $user->notify(new TaskAssigned($task));
+        }
 
         return response()->json($task, 201);
     }
@@ -71,17 +74,17 @@ class TaskController
         $oldAssignedUserId = $task->assigned_user_id;
         $task->update($validated);
 
-        // if ($task->assigned_user_id && $task->assigned_user_id !== $oldAssignedUserId) {
-        //     $user = User::find($task->assigned_user_id);
-        //     $user->notify(new TaskAssigned($task));
-        // }
+        if ($task->assigned_user_id && $task->assigned_user_id !== $oldAssignedUserId) {
+            $user = User::find($task->assigned_user_id);
+            $user->notify(new TaskAssigned($task));
+        }
 
-        // if ($task->wasChanged('due_date') || $task->wasChanged('status')) {
-        //     if ($task->assigned_user_id) {
-        //         $user = User::find($task->assigned_user_id);
-        //         $user->notify(new TaskUpdated($task));
-        //     }
-        // }
+        if ($task->wasChanged('due_date') || $task->wasChanged('status')) {
+            if ($task->assigned_user_id) {
+                $user = User::find($task->assigned_user_id);
+                $user->notify(new TaskUpdated($task));
+            }
+        }
 
         return response()->json($task);
     }
